@@ -69,6 +69,14 @@ def get_query(request_parameter):
         raise ValueError('Query must be a json document')
     return query if query else dict()
 
+def get_uids(request_parameter):
+    try:
+        uids = request_parameter.get('uids')
+        uids = uids.split(",")
+    except (AttributeError, KeyError):
+        return []
+
+    return uids if uids else []
 
 def get_recursive(request_parameter):
     try:
