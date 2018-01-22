@@ -46,7 +46,7 @@ class RestFirmware(Resource):
                     return error_message('Unknown exception on request', self.URL, dict(offset=offset, limit=limit, query=query, recursive=recursive))
             else:
                 with ConnectTo(FrontEndDbInterface, self.config) as connection:
-                    firmware_results = connection.get_objects_by_uid_list(uids)
+                    firmware_results = connection.get_objects_by_uid_list(uids, include_analysis=False)
                 if not firmware_results:
                     return error_message('No firmware results found for requested UIDs', self.URL, dict(uids=uids))
 

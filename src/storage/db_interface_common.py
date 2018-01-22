@@ -84,12 +84,12 @@ class MongoInterfaceCommon(MongoInterface):
             logging.debug('No FileObject with UID {} found.'.format(uid))
             return None
 
-    def get_objects_by_uid_list(self, uid_list, analysis_filter=None):
+    def get_objects_by_uid_list(self, uid_list, analysis_filter=None, include_analysis=True):
         if not uid_list:
             return []
         query = self._build_search_query_for_uid_list(uid_list)
-        results = [self._convert_to_firmware(i, analysis_filter=analysis_filter) for i in self.firmwares.find(query) if i is not None]
-        results.extend([self._convert_to_file_object(i, analysis_filter=analysis_filter) for i in self.file_objects.find(query) if i is not None])
+        results = [self._convert_to_firmware(i, analysis_filter=analysis_filter, include_analysis=include_analysis) for i in self.firmwares.find(query) if i is not None]
+        results.extend([self._convert_to_file_object(i, analysis_filter=analysis_filter, include_analysis=include_analysis) for i in self.file_objects.find(query) if i is not None])
         return results
 
     @staticmethod
@@ -97,7 +97,7 @@ class MongoInterfaceCommon(MongoInterface):
         query = {'_id': {'$in': list(uid_list)}}
         return query
 
-    def _convert_to_firmware(self, entry, analysis_filter=None):
+    def _convert_to_firmware(self, entry, analysis_filter=None, include_analysis=True):
         firmware = Firmware()
         firmware.uid = entry['_id']
         firmware.size = entry['size']
@@ -107,7 +107,10 @@ class MongoInterfaceCommon(MongoInterface):
         firmware.set_release_date(convert_time_to_str(entry['release_date']))
         firmware.set_vendor(entry['vendor'])
         firmware.set_firmware_version(entry['version'])
-        firmware.processed_analysis = self.retrieve_analysis(entry['processed_analysis'], analysis_filter=analysis_filter)
+
+        if include_analysis:
+            firmware.processed_analysis = self.retrieve_analysis(entry['processed_analysis'], analysis_filter=analysis_filter)
+
         firmware.files_included = set(entry['files_included'])
         firmware.virtual_file_path = entry['virtual_file_path']
         if 'tags' in entry:
@@ -118,14 +121,17 @@ class MongoInterfaceCommon(MongoInterface):
             firmware.comments = entry['comments']
         return firmware
 
-    def _convert_to_file_object(self, entry, analysis_filter=None):
+    def _convert_to_file_object(self, entry, analysis_filter=None, include_analysis=True):
         file_object = FileObject()
         file_object.uid = entry['_id']
         file_object.size = entry['size']
         file_object.set_name(entry['file_name'])
         file_object.virtual_file_path = entry['virtual_file_path']
         file_object.parents = entry['parents']
-        file_object.processed_analysis = self.retrieve_analysis(entry['processed_analysis'], analysis_filter=analysis_filter)
+
+        if include_analysis:
+            file_object.processed_analysis = self.retrieve_analysis(entry['processed_analysis'], analysis_filter=analysis_filter)
+
         file_object.files_included = set(entry['files_included'])
         file_object.parent_firmware_uids = set(entry['parent_firmware_uids'])
         for attribute in ['comments']:  # for backwards compatibility
